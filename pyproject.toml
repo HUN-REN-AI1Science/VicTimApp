@@ -1,0 +1,38 @@
+[project]
+name = "forest-grassland-twin"
+version = "0.1.0"
+description = "Coupled FORMIND/GRASSMIND forest-grassland digital twin"
+requires-python = ">=3.12"
+dependencies = [
+    "ecocore",
+    "formind",
+    "grassmind",
+    "backend",
+]
+
+[tool.uv.workspace]
+members = ["packages/*"]
+
+[tool.uv.sources]
+ecocore = { workspace = true }
+formind = { workspace = true }
+grassmind = { workspace = true }
+backend = { workspace = true }
+
+[dependency-groups]
+dev = ["pytest>=8", "httpx>=0.27"]
+
+[tool.pytest.ini_options]
+testpaths = [
+    "packages/ecocore/tests",
+    "packages/formind/tests",
+    "packages/grassmind/tests",
+    "packages/backend/tests",
+    "tests",
+]
+markers = [
+    "slow: multi-decade simulations; deselect with -m 'not slow'",
+]
+
+[tool.ruff]
+line-length = 100
