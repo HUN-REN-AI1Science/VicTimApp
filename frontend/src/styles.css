@@ -392,6 +392,11 @@ svg .axis.break { stroke: var(--muted); }
    stand stands on, not one rule among several. */
 svg .axis.baseline { stroke: var(--ink); stroke-width: 1.25; }
 
+/* Zero on a chart whose series crosses it. Once the floor drops below zero the
+   sign of a value is only legible against this line, so it is drawn like the
+   ground baseline rather than as one gridline among several. */
+svg .axis.zero { stroke: var(--ink); stroke-width: 1.25; }
+
 /* Colour scale for the region map. A legend is what makes the tile colour
    readable as a value rather than decoration; the marker shows where the
    selected tile sits on the scale at the current step. */

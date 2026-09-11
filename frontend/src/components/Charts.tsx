@@ -26,6 +26,26 @@ function niceMax(value: number): number {
   return step * magnitude;
 }
 
+/**
+ * Vertical domain for a line chart.
+ *
+ * A series that never goes negative keeps the zero floor it has always had.
+ * Once any value is negative the floor has to drop with it, or the negative
+ * part of the trajectory is drawn below the plot and silently disappears --
+ * which is how a stand running a carbon debt for centuries read as a flatline
+ * at zero.
+ *
+ * The two sides are rounded outwards independently rather than forced
+ * symmetric, so a shallow dip below zero under a large positive series stays
+ * visibly shallow instead of being given half the plot height.
+ */
+function yDomain(values: number[]): { min: number; max: number } {
+  const max = Math.max(...values, 0);
+  const min = Math.min(...values, 0);
+  if (min >= 0) return { min: 0, max: niceMax(max) };
+  return { min: -niceMax(-min), max: max > 0 ? niceMax(max) : 0 };
+}
+
 function format(value: number): string {
   if (value === 0) return "0";
   const abs = Math.abs(value);
@@ -55,20 +75,30 @@ export function LineChart({
     h: height - PAD.top - PAD.bottom,
   };
   const allValues = series.flatMap((s) => s.values).filter(Number.isFinite);
-  const yMax = niceMax(Math.max(...allValues, 0));
+  const { min: yMin, max: yMax } = yDomain(allValues);
+  const ySpan = yMax - yMin;
   const xMax = Math.max(...x, 1);
 
   const px = (v: number) => PAD.left + (v / xMax) * inner.w;
-  const py = (v: number) => PAD.top + inner.h - (v / yMax) * inner.h;
+  const py = (v: number) => PAD.top + inner.h - ((v - yMin) / ySpan) * inner.h;
 
-  const ticks = [0, 0.5, 1].map((f) => f * yMax);
+  // With a floor below zero the midpoint tick is worth less than the bounds
+  // and the zero line, so label those instead. Set-deduplicated because a
+  // wholly negative series has 0 as its upper bound.
+  const ticks = [...new Set(yMin < 0 ? [yMin, 0, yMax] : [0, 0.5 * yMax, yMax])];
 
   return (
     <div>
       <svg viewBox={`0 0 ${width} ${height}`} width="100%" role="img">
         {ticks.map((t) => (
           <g key={t}>
-            <line className="axis" x1={PAD.left} x2={width - PAD.right} y1={py(t)} y2={py(t)} />
+            <line
+              className={t === 0 && yMin < 0 ? "axis zero" : "axis"}
+              x1={PAD.left}
+              x2={width - PAD.right}
+              y1={py(t)}
+              y2={py(t)}
+            />
             <text x={PAD.left - 5} y={py(t) + 3} textAnchor="end">
               {format(t)}
             </text>
