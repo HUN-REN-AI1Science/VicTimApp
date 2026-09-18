@@ -1,10 +1,5 @@
 /**
- * Everything one tile has to say: its stand structure and its own charts.
- *
- * Moved out of `App` unchanged when the view became one tab per tile. Every
- * number here is a property of a single tile — with a 2D region there is no
- * global series to plot, because the tiles do not share a soil column or a light
- * profile, only fluxes between them.
+ * Everything the simulated tile has to say: its stand structure and its charts.
  *
  * Values arrive per m² of ground, as everything the API returns does; the
  * conversions here are for display only and each is labelled in its heading.
@@ -26,8 +21,6 @@ const GRASS_COLOURS: Record<string, string> = {
 };
 
 export function TilePanel({
-  x,
-  y,
   series,
   years,
   index,
@@ -37,8 +30,6 @@ export function TilePanel({
   treeParams,
   grassParams,
 }: {
-  x: number;
-  y: number;
   series: TileRecord[];
   years: number[];
   index: number;
@@ -73,17 +64,13 @@ export function TilePanel({
     })),
   ];
 
-  const shaded = (record?.sky_view_fraction ?? 1) < 1;
-
   return (
     <>
       <div className="views">
         <section className="card">
           <h2>
             Stand structure
-            <em>
-              tile ({x}, {y}) · {tileSizeM} m
-            </em>
+            <em>{tileSizeM} m</em>
           </h2>
           {profile?.stand_profile || profile?.sward_profile ? (
             <StandProfile
@@ -99,49 +86,34 @@ export function TilePanel({
         </section>
 
         <section className="card">
-          <h2>
-            This tile, this year <em>({x}, {y})</em>
-          </h2>
+          <h2>This year</h2>
           {record ? (
-            <>
-              <dl className="readout">
-                <div>
-                  <dt>leaf area index</dt>
-                  <dd>{record.lai?.toFixed(2)}</dd>
-                </div>
-                <div>
-                  <dt>floor light</dt>
-                  <dd>{((record.floor_light_fraction ?? 0) * 100).toFixed(1)}%</dd>
-                </div>
-                <div>
-                  <dt>soil water</dt>
-                  <dd>{((record.relative_water_content ?? 0) * 100).toFixed(0)}%</dd>
-                </div>
-                <div>
-                  <dt>trees</dt>
-                  <dd>{((record.forest_stems ?? 0) * 10000).toFixed(0)} ha⁻¹</dd>
-                </div>
-                <div>
-                  <dt>sward</dt>
-                  <dd>{((record.grassland_shoot_c ?? 0) * 1000).toFixed(0)} gC m⁻²</dd>
-                </div>
-                <div>
-                  <dt>canopy top</dt>
-                  <dd>{(record.canopy_top_m ?? 0).toFixed(1)} m</dd>
-                </div>
-                <div>
-                  <dt>sky visible</dt>
-                  <dd>{((record.sky_view_fraction ?? 1) * 100).toFixed(0)}%</dd>
-                </div>
-              </dl>
-              {shaded && (
-                <p className="hint">
-                  Neighbouring canopies take {(100 - (record.sky_view_fraction ?? 1) * 100).toFixed(0)}%
-                  of this tile’s sky before its own profile attenuates anything. Floor light is a
-                  fraction of what the tile receives, not of the open sky.
-                </p>
-              )}
-            </>
+            <dl className="readout">
+              <div>
+                <dt>leaf area index</dt>
+                <dd>{record.lai?.toFixed(2)}</dd>
+              </div>
+              <div>
+                <dt>floor light</dt>
+                <dd>{((record.floor_light_fraction ?? 0) * 100).toFixed(1)}%</dd>
+              </div>
+              <div>
+                <dt>soil water</dt>
+                <dd>{((record.relative_water_content ?? 0) * 100).toFixed(0)}%</dd>
+              </div>
+              <div>
+                <dt>trees</dt>
+                <dd>{((record.forest_stems ?? 0) * 10000).toFixed(0)} ha⁻¹</dd>
+              </div>
+              <div>
+                <dt>sward</dt>
+                <dd>{((record.grassland_shoot_c ?? 0) * 1000).toFixed(0)} gC m⁻²</dd>
+              </div>
+              <div>
+                <dt>canopy top</dt>
+                <dd>{(record.canopy_top_m ?? 0).toFixed(1)} m</dd>
+              </div>
+            </dl>
           ) : (
             <p className="hint">Nothing recorded for this step.</p>
           )}
@@ -169,12 +141,6 @@ export function TilePanel({
                 label: "floor light fraction",
                 colour: "#c9a227",
                 values: pick("floor_light_fraction"),
-              },
-              {
-                label: "sky visible",
-                colour: "#7a93a8",
-                values: pick("sky_view_fraction"),
-                dashed: true,
               },
             ]}
           />

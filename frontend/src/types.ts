@@ -7,6 +7,7 @@
  */
 
 export interface SiteConfig {
+  tile_size_m: number;
   depth_m: number;
   sand_fraction: number;
   clay_fraction: number;
@@ -26,17 +27,6 @@ export interface WeatherConfig {
   peak_radiation_mj_m2: number;
   years_of_variability: number;
   seed: number;
-}
-
-export interface GridConfig {
-  nx: number;
-  ny: number;
-  tile_size_m: number;
-  dispersal: "none" | "exponential";
-  dispersal_mean_distance_m: number;
-  dispersal_radius_tiles: number;
-  lateral_shading: "none" | "sky_view";
-  shading_radius_tiles: number;
 }
 
 export interface MowingConfig {
@@ -75,33 +65,14 @@ export interface ManagementConfig {
   fertilisation: FertilisationConfig[];
 }
 
-/** What stands on a tile at year zero. Per tile type, not per region. */
-export interface TileVegetationConfig {
+/** What stands on the tile at year zero, and the PFTs and seed rain it draws on. */
+export interface VegetationConfig {
   include_forest: boolean;
   include_grassland: boolean;
   initial_sward_density_per_m2: number;
   initial_trees_per_tile: number;
   initial_tree_pft: string;
   initial_tree_dbh: number;
-}
-
-/**
- * A named land use: what grows on a tile and what is done to it.
- *
- * The unit of per-tile configuration. Twenty-five tiles are a handful of types
- * and an assignment, not twenty-five forms — editing "meadow" edits every
- * meadow at once, which is what makes a region editable at all.
- */
-export interface TileTypeConfig {
-  id: string;
-  label: string;
-  colour: string;
-  management: ManagementConfig;
-  vegetation: TileVegetationConfig;
-}
-
-/** Region-wide vegetation: the seed source and the PFT tables. */
-export interface VegetationConfig {
   external_seed_rain: Record<string, number>;
   tree_pft_overrides: Record<string, Record<string, number>>;
   grass_pft_overrides: Record<string, Record<string, number>>;
@@ -112,13 +83,10 @@ export interface ScenarioConfig {
   years: number;
   record_every_days: number;
   seed: number;
-  grid: GridConfig;
   site: SiteConfig;
   weather: WeatherConfig;
+  management: ManagementConfig;
   vegetation: VegetationConfig;
-  tile_types: TileTypeConfig[];
-  /** One type id per tile, row-major (`y * nx + x`); empty means all `tile_types[0]`. */
-  tile_assignment: string[];
 }
 
 export interface JobStatus {
@@ -135,18 +103,12 @@ export interface JobStatus {
 
 export type TileRecord = Record<string, number>;
 
-export interface TileSeries {
-  x: number;
-  y: number;
-  series: TileRecord[];
-}
-
 export interface SimulationResults {
   id: string;
   scenario: ScenarioConfig;
   recorded_days: number[];
   years: number[];
-  tiles: TileSeries[];
+  series: TileRecord[];
 }
 
 /** One cohort in the vertical stand diagram. */

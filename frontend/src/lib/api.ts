@@ -33,8 +33,7 @@ export const api = {
     }),
   status: (id: string) => request<JobStatus>(`/api/simulations/${id}`),
   results: (id: string) => request<SimulationResults>(`/api/simulations/${id}/results`),
-  profile: (id: string, x: number, y: number) =>
-    request<ProfileRecord[]>(`/api/simulations/${id}/profile?x=${x}&y=${y}`),
+  profile: (id: string) => request<ProfileRecord[]>(`/api/simulations/${id}/profile`),
 };
 
 /**
