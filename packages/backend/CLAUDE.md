@@ -18,23 +18,16 @@ codegen step. Add a field in both. `packages/backend/tests/test_api.py` is what
 catches drift; keep it thorough rather than adding a build step.
 
 Validation bounds in `Field(...)` are the API's only defence against a scenario
-that would run for hours. Keep `years`, `nx`, `ny` bounded.
+that would run for hours. Keep `years` bounded.
 
 ## Scenario scope
 
-Three scopes, and a field belongs to exactly one: region (`grid`, `site`,
-`weather`, `vegetation`), tile type (`tile_types[].management`,
-`tile_types[].vegetation`), tile (`tile_assignment`). Before adding a field, say
-which it is. A per-tile soil or climate is not a new field, it is a second site —
-`ecocore` guarantees one soil column and one light profile per tile, and the
-scenario shape is what stops the API from promising otherwise.
-
-There is no region-wide `management` any more. If you add one back you have two
-sources of truth for what happens on a tile.
-
-`tile_assignment` is validated, not repaired: wrong length or an unknown id is a
-`422`. Padding a short assignment would run a scenario the client did not
-describe.
+`ScenarioConfig` describes one tile: `site`, `weather`, `management`,
+`vegetation`. There is only one scope, so there is no question of which a new
+field belongs to — but resist adding a second soil or climate field regardless.
+`ecocore` guarantees one soil column and one light profile per tile, and a
+scenario shape that let two fields describe two sites would let the API promise
+something the model cannot do.
 
 ## PFT overrides
 

@@ -23,7 +23,7 @@ from pathlib import Path
 from ecocore import run_simulation
 from ecocore.units import DAYS_PER_YEAR
 
-from .scenario import build_grid, build_weather, tile_recorder
+from .scenario import build_tile, build_weather, tile_recorder
 from .schemas import JobStatus, ScenarioConfig
 
 __all__ = ["JobStore"]
@@ -102,7 +102,7 @@ class JobStore:
     def _run(self, job_id: str, config: ScenarioConfig) -> None:
         try:
             self._write("UPDATE jobs SET state='running' WHERE id=?", (job_id,))
-            grid = build_grid(config)
+            tile = build_tile(config)
             weather = build_weather(config)
 
             def progress(done: int, total: int) -> None:
@@ -112,7 +112,7 @@ class JobStore:
                 )
 
             result = run_simulation(
-                grid,
+                tile,
                 weather,
                 years=config.years,
                 record_every=config.record_every_days,
@@ -134,21 +134,16 @@ class JobStore:
             )
 
     @staticmethod
-    def _split(result) -> tuple[dict, dict]:
+    def _split(result) -> tuple[dict, list[dict]]:
         """Separate the numeric time series from the nested profile snapshots."""
-        series_tiles = []
-        profiles: dict[str, list[dict]] = {}
-        for (x, y), records in result.tile_series.items():
-            numeric = []
-            nested = []
-            for record in records:
-                numeric.append({k: v for k, v in record.items() if k not in PROFILE_KEYS})
-                nested.append({k: record.get(k) for k in PROFILE_KEYS if k in record})
-            series_tiles.append({"x": x, "y": y, "series": numeric})
-            profiles[f"{x},{y}"] = nested
+        numeric = []
+        profiles = []
+        for record in result.series:
+            numeric.append({k: v for k, v in record.items() if k not in PROFILE_KEYS})
+            profiles.append({k: record.get(k) for k in PROFILE_KEYS if k in record})
         years = [d / DAYS_PER_YEAR for d in result.recorded_days]
         return (
-            {"recorded_days": result.recorded_days, "years": years, "tiles": series_tiles},
+            {"recorded_days": result.recorded_days, "years": years, "series": numeric},
             profiles,
         )
 
@@ -180,11 +175,11 @@ class JobStore:
         payload["scenario"] = json.loads(rows[0]["scenario"])
         return payload
 
-    def profiles(self, job_id: str, x: int, y: int) -> list[dict] | None:
+    def profiles(self, job_id: str) -> list[dict] | None:
         rows = self._read("SELECT profiles FROM jobs WHERE id=?", (job_id,))
         if not rows or rows[0]["profiles"] is None:
             return None
-        return json.loads(rows[0]["profiles"]).get(f"{x},{y}")
+        return json.loads(rows[0]["profiles"])
 
     def list_jobs(self, limit: int = 50) -> list[JobStatus]:
         rows = self._read(
