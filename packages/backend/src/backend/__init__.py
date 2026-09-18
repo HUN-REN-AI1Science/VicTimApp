@@ -1,7 +1,7 @@
 """backend -- the FastAPI service that drives the coupled simulation.
 
 Holds no ecology. Its job is to turn a scenario description into an
-`ecocore.Grid`, run it off the request thread, and serve progress and results to
+`ecocore.Tile`, run it off the request thread, and serve progress and results to
 the browser.
 """
 

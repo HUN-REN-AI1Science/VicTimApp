@@ -15,10 +15,8 @@ real resources instead of each simulating its own site.
 | `soil.py` | CENTURY 4.0 pools plus a water bucket |
 | `weather.py` | Daily drivers, with a synthetic generator for offline runs |
 | `disturbance.py` | `Defoliation`, broadcast to every module in a tile |
-| `tile.py` | `Tile.step_day` — the fixed order of operations that *is* the coupling |
-| `dispersal.py` | Seed exchange between tiles, once a year |
-| `shading.py` | The sky a tile's neighbours take, once a day |
-| `grid.py` | The 2D region and the driving loop |
+| `tile.py` | `Tile.step_day` — the fixed order of operations that *is* the coupling — plus `SeedRain`, a tile's self-seeding state |
+| `simulation.py` | The daily/annual driving loop over one tile |
 
 ## The daily order of operations
 
@@ -63,54 +61,6 @@ uptake, fertilisation, biological fixation and leaching separately.
 Nitrogen leaves by two routes: plant uptake, and leaching with drainage. Leaching
 matters — without it, mineralisation raises mineral nitrogen without bound and a
 century-long run ends with thousands of kg N per hectare.
-
-## Lateral shading
-
-The second between-tile flux, and the daily one. A tile standing next to a 30 m
-canopy does not receive open-sky irradiance however empty its own profile is, so
-`shading.py` gives each tile a **sky view factor** — the share of the hemisphere
-its neighbours leave it — and `Tile.step_day` scales incident PAR by it before
-the one shared profile is resolved.
-
-Horizon-angle form (Steyn 1980; Oke, *Boundary Layer Climates*, 2nd ed., ch. 8),
-over eight azimuth sectors:
-
-```
-theta_i = max over tiles along sector i of atan(h_neighbour / d)
-SVF     = 1 - (1/N) * sum_i sin²(theta_i)
-```
-
-An unobstructed tile has SVF = 1; a 20 m clearing walled in by 30 m forest has
-SVF ≈ 0.39. Each tile publishes one scalar, `Tile.canopy_top_m`, and reads its
-neighbours’ — no tile ever sees another’s cohorts, and there is still exactly one
-light profile and one soil column per tile.
-
-It is a first-order treatment, and the docstring says so: the sun’s position is
-not modelled, so all radiation is treated as diffuse; distances are
-centre-to-centre, which understates an immediate neighbour; and tiles off the
-grid edge count as open sky, the same honest treatment of a finite region that
-dispersal gives seeds that leave it. Heights are read one day stale, which is
-what lets the day loop step each tile once.
-
-**Conservation is restated, not weakened.** Per tile, `sum(absorbed) + floor ==
-incident` still holds exactly — shading only changes what `incident` is. Across
-the grid a shaded region intercepts strictly *less* than the open sky delivers
-over its area, never more, which is what
-`tests/test_shading.py::test_a_shaded_region_intercepts_less_than_the_sky_delivers`
-asserts.
-
-## Grid
-
-Milestone 1 runs `Grid(nx=1, ny=1)`, but per-tile indexing, the tile loop, the
-daily shading pass and the annual dispersal pass are written for the general
-case. `tests/test_grid.py::test_grid_of_nine_reproduces_a_single_tile` asserts
-that a 3×3 grid with both between-tile processes off reproduces the 1×1
-trajectory exactly, which is what makes that claim checkable rather than
-aspirational.
-
-Both default to off. Switching `NoDispersal` for `ExponentialKernel`, or
-`NoLateralShading` for `SkyViewShading`, is all it takes to turn the vertical
-slice into a spatial simulation.
 
 ## Provenance
 

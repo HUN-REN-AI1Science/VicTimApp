@@ -1,7 +1,7 @@
 # backend
 
 The FastAPI service that drives the coupled simulation. **Holds no ecology.** It
-turns a scenario description into an `ecocore.Grid`, runs it off the request
+turns a scenario description into an `ecocore.Tile`, runs it off the request
 thread, and serves progress and results to the browser.
 
 ## Why job-and-poll
@@ -23,8 +23,8 @@ so it is a real day count rather than an estimate.
 | `POST` | `/api/simulations` | Start a run → `202` + `JobStatus`, `Location` header |
 | `GET` | `/api/simulations` | Recent jobs, newest first |
 | `GET` | `/api/simulations/{id}` | Status and progress |
-| `GET` | `/api/simulations/{id}/results` | Numeric time series per tile |
-| `GET` | `/api/simulations/{id}/profile?x=&y=` | Vertical stand and sward structure |
+| `GET` | `/api/simulations/{id}/results` | Numeric time series |
+| `GET` | `/api/simulations/{id}/profile` | Vertical stand and sward structure |
 
 `results` returns `409` while a run is unfinished and `500` if it failed.
 
@@ -38,39 +38,23 @@ names a field the PFT does not have.
 
 ### How a scenario is scoped
 
-`ScenarioConfig` splits three ways, and the split is the shape of the model
-rather than of the form:
-
-| Scope | Fields | Why there |
-|---|---|---|
-| region | `grid`, `site`, `weather`, `vegetation` | one climate, one soil, one set of PFTs. A tile with its own soil column would be a second site, and `ecocore` guarantees exactly one column per tile |
-| tile type | `tile_types[]` — `management` and initial `vegetation` | the only two things that legitimately differ between two tiles of one region |
-| tile | `tile_assignment[]` — one type id per tile, row-major | a tile is nothing but a land use and a position |
-
-`tile_assignment` may be empty, meaning every tile takes `tile_types[0]`; that is
-how a client which has never heard of tile types still gets a uniform, runnable
-region. A *partial* assignment is rejected with `422` rather than padded — filling
-in the tiles a caller forgot would run a different scenario than the one they
-described.
-
-`scenario.build_grid` builds one `ManagementSchedule` per type, not per tile:
-schedules are read and never mutated during a run, so twenty-five meadow tiles
-share one.
+`ScenarioConfig` is flat: `site`, `weather`, `management` and `vegetation` each
+describe the one tile a run simulates. There is no per-tile indirection to
+resolve — `scenario.build_tile` reads the config once and builds the tile it
+describes.
 
 ### Why the default scenario is not the schema default
 
-`GET /api/scenarios/default` serves a 5×5 region with a wooded edge, a mown strip
-and both between-tile fluxes on — a demonstration, because neither flux does
-anything visible in twenty-five identical columns. The `GridConfig` field
-defaults stay 1×1 with both fluxes off: a `POST` that omits `grid` must not
-silently buy twenty-five times the work, or a different physics, and
-`ecocore`'s grid-reproduces-a-single-tile guard depends on off being off.
+`GET /api/scenarios/default` serves 90 years of abandoned management on bare
+ground — the one regime whose outcome changes over the run, so it is the most
+legible thing to show on first load. The schema defaults themselves stay a
+short, cheap run, so a `POST` that omits fields still gets something runnable
+rather than an implicit long simulation.
 
 ### Why profiles are a separate endpoint
 
 Stand and sward profiles are nested and large enough to dominate a results
-payload, and the map view does not need them. `runner.JobStore._split` separates
-them at storage time.
+payload. `runner.JobStore._split` separates them at storage time.
 
 ## Modules
 

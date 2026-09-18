@@ -228,73 +228,7 @@ button.primary:disabled { background: var(--muted); border-color: var(--muted); 
   font-weight: 600;
 }
 
-/* The view selector: the region, and the tile the region has selected. Two
-   entries, not one per tile -- a 16x16 region would be 257 tabs, which is a
-   list rather than a selector. The map does the selecting. */
-.viewtabs {
-  display: flex;
-  gap: 4px;
-  padding: 12px 16px 0;
-  overflow-x: auto;
-  flex-shrink: 0;
-}
-
-.viewtab {
-  font-size: 11px;
-  padding: 3px 9px;
-  white-space: nowrap;
-  font-family: var(--mono);
-}
-
-.viewtab.active { border-color: var(--accent); background: var(--accent-soft); }
-
-/* Map beside the editor for the tile it has selected: the two are one act, and
-   a form that changes one tile is only legible next to the picture of which
-   tile that is. Wraps to one column when there is no room for two, and scrolls,
-   because the land-use editor is taller than the map it sits beside. */
-.region {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 380px));
-  align-items: start;
-  gap: 12px;
-  padding: 12px 16px;
-  overflow-y: auto;
-}
-
-/* The map does not want the stand card's width; it wants to stay square. */
-.region > .card:first-child { max-width: 380px; }
-
-.tile-editor hr { border: 0; border-top: 1px solid var(--line); margin: 12px 0; }
-
-/* Assign a land use to more than one tile at a time. Painting 256 tiles one by
-   one is not configuration, it is data entry. */
-.paint-row { display: flex; gap: 6px; margin-bottom: 8px; }
-.paint-row button { flex: 1; font-size: 11px; }
-
-/* Which colour on the map means what. Only the types actually in use appear --
-   an unused entry in the palette is not part of this region. */
-.typelegend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 12px;
-  margin-top: 8px;
-  font-size: 10.5px;
-  color: var(--muted);
-}
-.typelegend span { display: flex; align-items: center; gap: 5px; }
-.typelegend b { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
-
-/* A button that reads as a link, for a navigation the heading offers in passing. */
-button.link {
-  border: 0;
-  background: none;
-  padding: 0;
-  color: var(--accent);
-  cursor: pointer;
-  font: inherit;
-}
-
-/* Scalar readouts for the selected tile, beside its stand picture. */
+/* Scalar readouts for the tile, beside its stand picture. */
 .readout { margin: 0; display: grid; gap: 4px; }
 
 .readout div {
@@ -366,19 +300,6 @@ button.link {
   padding: 32px;
 }
 
-.tilegrid { display: grid; gap: 3px; }
-
-.tile {
-  aspect-ratio: 1;
-  border-radius: 3px;
-  cursor: pointer;
-  border: 2px solid transparent;
-}
-
-.tile.selected { border-color: var(--ink); }
-
-/* The empty state is now only reached on the Tile tab before a run, so it is a
-   short explanation rather than a centred line. */
 .empty > div { max-width: 420px; display: grid; gap: 12px; text-align: left; }
 
 svg text { fill: var(--muted); font-size: 9px; font-family: var(--mono); }
@@ -391,41 +312,3 @@ svg .axis.break { stroke: var(--muted); }
 /* Ground level. Solid and darker than the gridlines: it is the baseline the
    stand stands on, not one rule among several. */
 svg .axis.baseline { stroke: var(--ink); stroke-width: 1.25; }
-
-/* Colour scale for the region map. A legend is what makes the tile colour
-   readable as a value rather than decoration; the marker shows where the
-   selected tile sits on the scale at the current step. */
-.colourscale {
-  margin: 0.5rem 0 0.35rem;
-}
-
-.colourscale-bar {
-  position: relative;
-  display: flex;
-  height: 10px;
-  border-radius: 2px;
-  overflow: hidden;
-  border: 1px solid var(--line);
-}
-
-.colourscale-bar span {
-  flex: 1 1 0;
-}
-
-.colourscale-marker {
-  position: absolute;
-  top: -3px;
-  bottom: -3px;
-  width: 2px;
-  margin-left: -1px;
-  background: var(--ink);
-  border-radius: 1px;
-}
-
-.colourscale-ticks {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.7rem;
-  color: var(--muted);
-  margin-top: 0.2rem;
-}

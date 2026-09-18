@@ -1,31 +1,25 @@
 /**
- * Configuration panel — the region, and only the region.
+ * Configuration panel — the whole scenario.
  *
- * Everything here is true of every tile: one soil column's properties, one
- * climate, one grid, one set of plant functional types. Nothing that can differ
- * between two tiles is edited here. Land use — management and initial
- * vegetation — belongs to the tile, so it is edited on the Region tab against
- * the tile the map has selected. See `TileTypeEditor`.
+ * One tile, so there is nothing left to scope a form to: site, weather,
+ * management and initial vegetation are all properties of the one thing being
+ * simulated, and all live here.
  *
  * Grouped the way the upstream models group their own inputs — site, weather,
  * plant functional types — so that someone who has configured FORMIND or
  * GRASSMIND finds the same categories in the same order.
  */
 
-import type { ParameterPayload, ScenarioConfig } from "../types";
-import { NumberField } from "./fields";
+import type { ManagementPreset, ManagementPresetId, ParameterPayload, ScenarioConfig } from "../types";
+import { CheckField, NumberField } from "./fields";
 import { ParameterForm } from "./ParameterForm";
 
 type Patch = (update: (draft: ScenarioConfig) => void) => void;
 
-/** `GridConfig` bounds nx and ny at 1..16 -- the API's only defence against a
- *  scenario that would run for hours. Clamp here so the form cannot submit a
- *  value the backend will reject. */
-const clampTiles = (value: number) => Math.min(16, Math.max(1, Math.round(value)));
-
 export function Sidebar({
   config,
   patch,
+  presets,
   treeParams,
   grassParams,
   onRun,
@@ -33,12 +27,21 @@ export function Sidebar({
 }: {
   config: ScenarioConfig;
   patch: Patch;
+  presets: ManagementPreset[];
   treeParams: ParameterPayload | null;
   grassParams: ParameterPayload | null;
   onRun: () => void;
   running: boolean;
 }) {
-  const tiles = config.grid.nx * config.grid.ny;
+  const applyPreset = (preset: ManagementPreset) =>
+    patch((d) => {
+      d.management = {
+        preset: preset.id as ManagementPresetId,
+        mowing: preset.mowing.map((m) => ({ ...m })),
+        grazing: preset.grazing.map((g) => ({ ...g })),
+        fertilisation: preset.fertilisation.map((f) => ({ ...f })),
+      };
+    });
 
   return (
     <aside className="sidebar">
@@ -77,69 +80,9 @@ export function Sidebar({
       </details>
 
       <details className="section">
-        <summary>Region</summary>
-        <NumberField
-          label="tiles across"
-          step="1"
-          value={config.grid.nx}
-          onChange={(v) => patch((d) => void (d.grid.nx = clampTiles(v)))}
-        />
-        <NumberField
-          label="tiles down"
-          step="1"
-          value={config.grid.ny}
-          onChange={(v) => patch((d) => void (d.grid.ny = clampTiles(v)))}
-        />
-        <NumberField
-          label="tile size"
-          unit="m"
-          value={config.grid.tile_size_m}
-          onChange={(v) => patch((d) => void (d.grid.tile_size_m = v))}
-        />
-        <p className="hint">
-          {config.grid.nx} × {config.grid.ny} = {tiles} tile{tiles === 1 ? "" : "s"},{" "}
-          {((tiles * config.grid.tile_size_m ** 2) / 10000).toFixed(2)} ha. Every tile is
-          simulated in full, so the run takes about that many times as long as one. What each
-          tile <em>is</em> is set on the Region tab.
-        </p>
-        <div className="field">
-          <label>seed dispersal</label>
-          <select
-            value={config.grid.dispersal}
-            onChange={(e) =>
-              patch((d) => void (d.grid.dispersal = e.target.value as "none" | "exponential"))
-            }
-          >
-            <option value="none">none (tiles independent)</option>
-            <option value="exponential">exponential kernel</option>
-          </select>
-        </div>
-        <div className="field">
-          <label>lateral shading</label>
-          <select
-            value={config.grid.lateral_shading}
-            onChange={(e) =>
-              patch((d) => void (d.grid.lateral_shading = e.target.value as "none" | "sky_view"))
-            }
-          >
-            <option value="none">none (open horizon)</option>
-            <option value="sky_view">sky view factor</option>
-          </select>
-        </div>
-        <p className="hint">
-          Two fluxes cross a tile boundary: seeds, once a year, and the sky a tall neighbour
-          takes, every day. With both off, every tile is an independent column — useful for
-          checking that a grid reproduces a single tile, and not much else.
-        </p>
-      </details>
-
-      <details className="section">
         <summary>Site (soil)</summary>
-        <p className="hint">
-          One soil column per tile, and every tile's column starts from these values. Soil is a
-          property of the site, not of the land use — a meadow and the wood beside it stand on
-          the same ground.
-        </p>
+        <NumberField label="tile size" unit="m" value={config.site.tile_size_m}
+          onChange={(v) => patch((d) => void (d.site.tile_size_m = v))} />
         <NumberField label="depth" unit="m" value={config.site.depth_m}
           onChange={(v) => patch((d) => void (d.site.depth_m = v))} />
         <NumberField label="sand fraction" value={config.site.sand_fraction}
@@ -173,11 +116,125 @@ export function Sidebar({
           onChange={(v) => patch((d) => void (d.weather.peak_radiation_mj_m2 = v))} />
       </details>
 
+      <details className="section" open>
+        <summary>Management</summary>
+        <div className="preset-grid">
+          {presets.map((preset) => (
+            <button
+              key={preset.id}
+              className={`preset${config.management.preset === preset.id ? " active" : ""}`}
+              onClick={() => applyPreset(preset)}
+              title={preset.description}
+            >
+              <strong>{preset.label}</strong>
+              <span>{preset.description}</span>
+            </button>
+          ))}
+        </div>
+
+        {config.management.mowing.length > 0 && (
+          <>
+            <div className="group-label">cuts (day of year / height m)</div>
+            {config.management.mowing.map((event, i) => (
+              <div className="event-row" key={i}>
+                <input
+                  type="number"
+                  value={event.day_of_year}
+                  onChange={(e) =>
+                    patch((d) => {
+                      d.management.mowing[i].day_of_year = Number(e.target.value);
+                      d.management.preset = "custom";
+                    })
+                  }
+                />
+                <input
+                  type="number"
+                  step="0.01"
+                  value={event.cut_height_m}
+                  onChange={(e) =>
+                    patch((d) => {
+                      d.management.mowing[i].cut_height_m = Number(e.target.value);
+                      d.management.preset = "custom";
+                    })
+                  }
+                />
+                <button
+                  onClick={() =>
+                    patch((d) => {
+                      d.management.mowing.splice(i, 1);
+                      d.management.preset = "custom";
+                    })
+                  }
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </>
+        )}
+        <button
+          onClick={() =>
+            patch((d) => {
+              d.management.mowing.push({
+                day_of_year: 190,
+                cut_height_m: 0.07,
+                removal_fraction: 0.9,
+                woody_kill_height_m: 0.6,
+              });
+              d.management.preset = "custom";
+            })
+          }
+        >
+          + add cut
+        </button>
+        <p className="hint">
+          A cut also destroys tree saplings below its woody-kill height. That is what keeps a
+          managed meadow from turning into woodland.
+        </p>
+      </details>
+
+      <details className="section">
+        <summary>Initial vegetation</summary>
+        <CheckField
+          id="include-grass"
+          label="grassland (GRASSMIND)"
+          checked={config.vegetation.include_grassland}
+          onChange={(v) => patch((d) => void (d.vegetation.include_grassland = v))}
+        />
+        <CheckField
+          id="include-forest"
+          label="forest (FORMIND)"
+          checked={config.vegetation.include_forest}
+          onChange={(v) => patch((d) => void (d.vegetation.include_forest = v))}
+        />
+        <NumberField
+          label="initial sward density"
+          unit="plants m-2"
+          value={config.vegetation.initial_sward_density_per_m2}
+          onChange={(v) => patch((d) => void (d.vegetation.initial_sward_density_per_m2 = v))}
+        />
+        <NumberField
+          label="planted trees"
+          unit="per tile"
+          step="1"
+          value={config.vegetation.initial_trees_per_tile}
+          onChange={(v) =>
+            patch((d) => void (d.vegetation.initial_trees_per_tile = Math.max(0, Math.round(v))))
+          }
+        />
+        <NumberField
+          label="planted tree size"
+          unit="m dbh"
+          step="0.01"
+          value={config.vegetation.initial_tree_dbh}
+          onChange={(v) => patch((d) => void (d.vegetation.initial_tree_dbh = v))}
+        />
+      </details>
+
       <details className="section">
         <summary>Seed rain</summary>
         <p className="hint">
-          Seeds arriving from outside the simulated region (m-2 y-1), the same for every tile.
-          Seeds moving <em>between</em> tiles are the dispersal kernel, under Region.
+          Seeds arriving from outside the simulated tile (m-2 y-1).
         </p>
         {Object.entries(config.vegetation.external_seed_rain).map(([pft, value]) => (
           <NumberField

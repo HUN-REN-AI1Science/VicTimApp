@@ -34,38 +34,17 @@ PFT colours are served by the API (`colour` on each PFT). `TilePanel` reads the
 served value and falls back to its own map only for a PFT the backend did not
 describe; prefer the served value when adding a chart.
 
-## Tabs
+## One view, no tabs
 
-`App` owns `activeTab`, one of `"region"` and `"tile"`. Two entries, not one per
-tile — 16×16 would be 257 tabs. **Do not add a tab per tile back.** The map is
-the selector; `tile` is the selection; the Tile tab is its detail view.
-
-`TilePanel` renders one tile and takes only that tile's data. Do not give it the
-whole results payload and let it index in — a panel that can see every tile is
-one refactor away from plotting a region-wide average, which would hide the
-spatial pattern the 2D grid exists to produce.
+There is one tile, so there is nothing to select and nothing to switch between.
+`App` renders `Sidebar` and `TilePanel` directly — do not add a tab per tile, or
+a tab at all, back in.
 
 ## Where a parameter's form goes
 
-- **Region-wide** (grid, soil, weather, seed rain, PFTs) → `Sidebar`.
-- **Per tile** (land use, and its management and initial vegetation) →
-  `TileTypeEditor`, on the Region tab, scoped to the selected tile.
-
-Do not move a per-tile control into the sidebar. A form that changes one tile is
-only legible next to the picture of which tile it changes, and the sidebar has no
-selection to scope itself to.
-
-`ScenarioConfig` has no `management` field any more; a schedule belongs to a tile
-type. If you find yourself adding a region-wide management setting, you are
-adding a second source of truth for what happens on a tile.
-
-## Tile assignment
-
-`tile_assignment` is a flat row-major list of type ids, one per tile, and **every
-tile must have one**. `lib/tiles.ts::normaliseAssignment` is called from `App`'s
-single `patch()` — that placement is what makes it an invariant rather than a
-convention. Do not normalise at the call sites instead; resizing the grid,
-deleting a type and loading a scenario would each have to remember separately.
+Everything — site, weather, management, initial vegetation, seed rain, PFTs —
+lives in `Sidebar`. There is only one scope now, so there is no second place a
+form could legitimately go.
 
 ## State
 

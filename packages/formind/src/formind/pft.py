@@ -120,7 +120,7 @@ class TreePFT:
     establishment_light_fraction: float = 0.03
     """Minimum floor light, as a fraction of incident, for a seedling to establish."""
     seeds_per_m2_year: float = 0.6
-    """Seed production offered to the dispersal kernel, per m2 of crown cover."""
+    """Seed production offered to the tile's seed rain, per m2 of crown cover."""
     initial_dbh: float = 2.5e-3
     """Stem diameter at which a seedling is promoted to a tree (m).
 

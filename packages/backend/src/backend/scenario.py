@@ -1,4 +1,4 @@
-"""Turn a `ScenarioConfig` into a runnable `ecocore.Grid`.
+"""Turn a `ScenarioConfig` into a runnable `ecocore.Tile`.
 
 This module is the only place that knows how the API's vocabulary maps onto the
 three simulation packages, which keeps the model packages free of any awareness
@@ -9,18 +9,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 
-from ecocore import (
-    ExponentialKernel,
-    Grid,
-    NoDispersal,
-    NoLateralShading,
-    SkyViewShading,
-    SoilColumn,
-    SoilParameters,
-    Tile,
-    WeatherSeries,
-    synthetic_weather,
-)
+from ecocore import SoilColumn, SoilParameters, Tile, WeatherSeries, synthetic_weather
 from formind import DEFAULT_TREE_PFTS, ForestModule, TreePFT
 from grassmind import (
     DEFAULT_GRASS_PFTS,
@@ -34,7 +23,7 @@ from grassmind import (
 
 from .schemas import ManagementConfig, ScenarioConfig
 
-__all__ = ["build_grid", "build_weather", "build_management", "tile_recorder"]
+__all__ = ["build_tile", "build_weather", "build_management", "tile_recorder"]
 
 
 def build_weather(config: ScenarioConfig) -> WeatherSeries:
@@ -55,9 +44,6 @@ def build_management(m: ManagementConfig) -> ManagementSchedule:
 
     An explicit list always wins over the preset, so the UI can start from a
     preset and then edit individual events without having to switch mode.
-
-    Takes one `ManagementConfig` rather than the whole scenario because a
-    schedule now belongs to a tile type, not to the run.
     """
     if not (m.mowing or m.grazing or m.fertilisation):
         presets = {
@@ -107,79 +93,47 @@ def _apply_overrides(defaults, overrides: dict[str, dict[str, float]]):
     return out
 
 
-def build_grid(config: ScenarioConfig) -> Grid:
+def build_tile(config: ScenarioConfig) -> Tile:
     tree_pfts: list[TreePFT] = _apply_overrides(
         DEFAULT_TREE_PFTS, config.vegetation.tree_pft_overrides
     )
     grass_pfts: list[GrassPFT] = _apply_overrides(
         DEFAULT_GRASS_PFTS, config.vegetation.grass_pft_overrides
     )
-    # One schedule per tile type, not per tile: twenty-five meadow tiles share
-    # one `ManagementSchedule`. Safe because a schedule is read, never mutated,
-    # during a run -- the same reason a single schedule could be shared across
-    # every tile before types existed.
-    schedules = {t.id: build_management(t.management) for t in config.tile_types}
-    seed_rain = dict(config.vegetation.external_seed_rain)
+    schedule = build_management(config.management)
+    v = config.vegetation
     s = config.site
 
-    def factory(x: int, y: int) -> Tile:
-        tile_type = config.tile_type_at(x, y)
-        v = tile_type.vegetation
-        schedule = schedules[tile_type.id]
-        soil = SoilColumn(
-            SoilParameters(
-                depth_m=s.depth_m,
-                sand_fraction=s.sand_fraction,
-                clay_fraction=s.clay_fraction,
-                field_capacity_mm=s.field_capacity_mm,
-                wilting_point_mm=s.wilting_point_mm,
-                initial_active_c=s.initial_active_c,
-                initial_slow_c=s.initial_slow_c,
-                initial_passive_c=s.initial_passive_c,
-                initial_mineral_n=s.initial_mineral_n,
+    soil = SoilColumn(
+        SoilParameters(
+            depth_m=s.depth_m,
+            sand_fraction=s.sand_fraction,
+            clay_fraction=s.clay_fraction,
+            field_capacity_mm=s.field_capacity_mm,
+            wilting_point_mm=s.wilting_point_mm,
+            initial_active_c=s.initial_active_c,
+            initial_slow_c=s.initial_slow_c,
+            initial_passive_c=s.initial_passive_c,
+            initial_mineral_n=s.initial_mineral_n,
+        )
+    )
+    tile = Tile(soil=soil, size_m=s.tile_size_m)
+    if v.include_grassland:
+        tile.add_module(
+            GrasslandModule.sown_sward(
+                pfts=grass_pfts,
+                plants_per_m2=v.initial_sward_density_per_m2,
+                management=schedule,
+                tile_area_m2=s.tile_size_m**2,
             )
         )
-        tile = Tile(soil=soil, size_m=config.grid.tile_size_m)
-        if v.include_grassland:
-            tile.add_module(
-                GrasslandModule.sown_sward(
-                    pfts=grass_pfts,
-                    plants_per_m2=v.initial_sward_density_per_m2,
-                    management=schedule,
-                    tile_area_m2=config.grid.tile_size_m**2,
-                )
-            )
-        if v.include_forest:
-            forest = ForestModule.bare_ground(tree_pfts)
-            if v.initial_trees_per_tile > 0:
-                forest.seed_stand(
-                    v.initial_tree_pft, v.initial_trees_per_tile, v.initial_tree_dbh
-                )
-            tile.add_module(forest)
-        tile.seed_rain.external = dict(seed_rain)
-        return tile
-
-    dispersal = (
-        ExponentialKernel(
-            mean_distance_m=config.grid.dispersal_mean_distance_m,
-            radius_tiles=config.grid.dispersal_radius_tiles,
-        )
-        if config.grid.dispersal == "exponential"
-        else NoDispersal()
-    )
-    shading = (
-        SkyViewShading(radius_tiles=config.grid.shading_radius_tiles)
-        if config.grid.lateral_shading == "sky_view"
-        else NoLateralShading()
-    )
-    return Grid.build(
-        config.grid.nx,
-        config.grid.ny,
-        factory,
-        tile_size_m=config.grid.tile_size_m,
-        dispersal=dispersal,
-        shading=shading,
-    )
+    if v.include_forest:
+        forest = ForestModule.bare_ground(tree_pfts)
+        if v.initial_trees_per_tile > 0:
+            forest.seed_stand(v.initial_tree_pft, v.initial_trees_per_tile, v.initial_tree_dbh)
+        tile.add_module(forest)
+    tile.seed_rain.external = dict(v.external_seed_rain)
+    return tile
 
 
 def tile_recorder(tile: Tile) -> dict:

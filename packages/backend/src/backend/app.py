@@ -22,7 +22,7 @@ from formind import DEFAULT_TREE_PFTS, tree_pft_schema
 from grassmind import DEFAULT_GRASS_PFTS, ManagementSchedule, grass_pft_schema
 
 from .runner import JobStore
-from .schemas import GridConfig, JobStatus, ScenarioConfig
+from .schemas import JobStatus, ManagementConfig, ScenarioConfig
 
 __all__ = ["app", "create_app"]
 
@@ -38,7 +38,7 @@ def create_app(database: str | None = None) -> FastAPI:
     application = FastAPI(
         title="Forest-Grassland Digital Twin",
         version="0.1.0",
-        summary="Coupled FORMIND/GRASSMIND simulation of a 2D tiled region.",
+        summary="Coupled FORMIND/GRASSMIND simulation of one site.",
         lifespan=lifespan,
     )
     application.state.store = store
@@ -128,28 +128,15 @@ def create_app(database: str | None = None) -> FastAPI:
     def default_scenario() -> ScenarioConfig:
         """A ready-to-run scenario, so the UI opens with something meaningful.
 
-        A region rather than a single tile, and a region that is not uniform: the
-        model is a 2D one with two fluxes across tile boundaries, and neither of
-        them does anything visible in twenty-five identical columns. This one is
-        a wooded edge, three columns of abandoned field, and a mown meadow strip
-        on the far side -- so seeds blow off the wood into the field, the field's
-        own canopy shades what is beside it, and the meadow demonstrates that
-        cutting is what stops the invasion. That is the whole model in one map.
-
-        Everything named here is named *here* rather than in the schema defaults.
-        A POST that omits `grid` still means one unshaded, non-dispersing tile:
-        an API client should not silently buy twenty-five times the work, or a
-        different physics, by leaving a field out.
+        Abandoned management on bare ground, run 90 years: the one regime whose
+        outcome actually changes over the run. Nothing stops the trees, so the
+        sward that establishes first is invaded and the site ends up forest --
+        the same story the top-level README's regime table tells, on one tile.
         """
-        nx, ny = 5, 5
-        strip = ["forest", "abandoned", "abandoned", "abandoned", "meadow"]
         return ScenarioConfig(
-            name="Wood edge and meadow",
+            name="Abandoned field",
             years=90,
-            grid=GridConfig(
-                nx=nx, ny=ny, dispersal="exponential", lateral_shading="sky_view"
-            ),
-            tile_assignment=strip * ny,
+            management=ManagementConfig(preset="abandoned"),
         )
 
     # -------------------------------------------------------- simulations --
@@ -184,15 +171,15 @@ def create_app(database: str | None = None) -> FastAPI:
         return results
 
     @application.get("/api/simulations/{job_id}/profile", tags=["simulations"])
-    def simulation_profile(job_id: str, x: int = 0, y: int = 0) -> list[dict]:
-        """Vertical stand and sward structure for one tile, one entry per record.
+    def simulation_profile(job_id: str) -> list[dict]:
+        """Vertical stand and sward structure for the tile, one entry per record.
 
         Served separately from the numeric series because it is nested and would
         otherwise dominate the results payload.
         """
-        profiles = store.profiles(job_id, x, y)
+        profiles = store.profiles(job_id)
         if profiles is None:
-            raise HTTPException(404, "no profile for that simulation or tile")
+            raise HTTPException(404, "no profile for that simulation")
         return profiles
 
     return application

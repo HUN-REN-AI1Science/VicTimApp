@@ -1,9 +1,4 @@
-/**
- * Form primitives shared by the sidebar and the region editor.
- *
- * Extracted when tile parameters moved out of the sidebar and onto the region
- * map, so the two places that edit a scenario render a field identically.
- */
+/** Form primitives shared across the sidebar's sections. */
 
 export function NumberField({
   label,
