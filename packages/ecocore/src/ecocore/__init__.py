@@ -7,12 +7,10 @@ exactly one vertical light profile and exactly one soil column, so `formind` and
 
 from .cohort import CanopyElement, Cohort
 from .disturbance import Defoliation
-from .dispersal import DispersalKernel, ExponentialKernel, NoDispersal, SeedRain
-from .grid import Grid, SimulationResult, run_simulation
 from .light import LightProfile, LightResult, compute_light
-from .shading import LateralShading, NoLateralShading, SkyViewShading
+from .simulation import SimulationResult, run_simulation
 from .soil import LitterInput, SoilColumn, SoilParameters
-from .tile import StepContext, Tile, VegetationModule
+from .tile import SeedRain, StepContext, Tile, VegetationModule
 from .weather import DayWeather, WeatherSeries, synthetic_weather
 
 __all__ = [
@@ -20,18 +18,11 @@ __all__ = [
     "Cohort",
     "DayWeather",
     "Defoliation",
-    "DispersalKernel",
-    "ExponentialKernel",
-    "Grid",
-    "LateralShading",
     "LightProfile",
     "LightResult",
     "LitterInput",
-    "NoDispersal",
-    "NoLateralShading",
     "SeedRain",
     "SimulationResult",
-    "SkyViewShading",
     "SoilColumn",
     "SoilParameters",
     "StepContext",

@@ -15,15 +15,11 @@ the order of operations that makes the coupling physical:
 Steps 2 and 4 are the whole scientific argument for this design. A tile that
 resolved light or water twice -- once per model -- would double-count the
 resource and produce more total production than the site receives.
-
-The only thing a neighbouring tile contributes is the irradiance arriving at step
-2: `step_day` takes a `sky_fraction` that scales incident PAR, computed by
-`ecocore.shading` from the neighbours' canopy heights. There is still exactly one
-profile and one column here, and a tile stepped on its own is unaffected.
 """
 
 from __future__ import annotations
 
+from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Iterable, Protocol, runtime_checkable
 
@@ -31,13 +27,39 @@ import numpy as np
 
 from .cohort import CanopyElement
 from .disturbance import Defoliation
-from .dispersal import SeedRain
 from .light import LightProfile, LightResult
 from .soil import SoilColumn, SoilParameters
 from .units import DAYS_PER_YEAR, DEFAULT_TILE_SIZE_M
 from .weather import DayWeather
 
-__all__ = ["Tile", "StepContext", "VegetationModule"]
+__all__ = ["Tile", "StepContext", "VegetationModule", "SeedRain"]
+
+
+@dataclass
+class SeedRain:
+    """Seeds arriving at this tile this year, in seeds m-2 y-1, keyed by PFT.
+
+    `incoming` is what the tile receives (external rain plus its own plants'
+    `outgoing` from the year before -- a tile only ever seeds itself);
+    `outgoing` is what its own plants produced this year.
+    """
+
+    incoming: dict[str, float] = field(default_factory=lambda: defaultdict(float))
+    outgoing: dict[str, float] = field(default_factory=lambda: defaultdict(float))
+    external: dict[str, float] = field(default_factory=dict)
+    """Constant background seed rain from outside the simulated region."""
+
+    def offer(self, pft: str, seeds_per_m2: float) -> None:
+        self.outgoing[pft] = self.outgoing.get(pft, 0.0) + seeds_per_m2
+
+    def available(self, pft: str) -> float:
+        return self.incoming.get(pft, 0.0) + self.external.get(pft, 0.0)
+
+    def reset_incoming(self) -> None:
+        self.incoming = defaultdict(float)
+
+    def reset_outgoing(self) -> None:
+        self.outgoing = defaultdict(float)
 
 
 @dataclass
@@ -111,23 +133,9 @@ class Tile:
     soil: SoilColumn = field(default_factory=lambda: SoilColumn(SoilParameters()))
     modules: list[VegetationModule] = field(default_factory=list)
     seed_rain: SeedRain = field(default_factory=SeedRain)
-    x: int = 0
-    y: int = 0
 
     canopy_top_m: float = 0.0
-    """Height of the tallest leaf in this tile (m), as of the last `step_day`.
-
-    The one piece of a tile's state a NEIGHBOURING tile is allowed to see, and
-    only through `shading.LateralShading`, which turns it into a scalar sky view
-    factor. A scalar height is not species biology -- ecocore never learns what
-    grew to that height.
-    """
-
-    sky_fraction: float = 1.0
-    """Fraction of open-sky irradiance this tile received on the last `step_day`.
-
-    Diagnostics only; the value in force is the argument `step_day` was given.
-    """
+    """Height of the tallest leaf in this tile (m), as of the last `step_day`."""
 
     @property
     def area_m2(self) -> float:
@@ -149,15 +157,8 @@ class Tile:
         day: DayWeather,
         day_index: int,
         rng: np.random.Generator,
-        sky_fraction: float = 1.0,
     ) -> LightResult:
-        """Advance this tile by one day. Returns the resolved light climate.
-
-        `sky_fraction` is the share of open-sky irradiance that reaches the top
-        of this tile's canopy after its neighbours have taken their part -- see
-        `ecocore.shading`. It defaults to 1.0, an unobstructed horizon, so a tile
-        stepped on its own behaves exactly as it always has.
-        """
+        """Advance this tile by one day. Returns the resolved light climate."""
         # 0. Disturbances are collected BEFORE anyone grows, so that every module
         #    sees the same events regardless of the order modules were added.
         disturbances: list[Defoliation] = []
@@ -170,19 +171,15 @@ class Tile:
         self.soil.add_precipitation(day.precipitation_mm)
         self.soil.add_deposition_n()
 
-        # 2. ONE light profile for every module in the tile, resolved against the
-        #    irradiance this tile actually receives: open sky less whatever the
-        #    neighbours' canopies block.
+        # 2. ONE light profile for every module in the tile.
         profile = LightProfile(self.area_m2)
         for module in self.modules:
             profile.add(module.canopy_elements())
-        self.sky_fraction = sky_fraction
-        light = profile.resolve(day.par_umol_m2_s * sky_fraction)
+        light = profile.resolve(day.par_umol_m2_s)
 
-        # Published for the neighbours' benefit. Read off the profile that was
-        # just built, so it costs nothing beyond the max: asking the modules for
-        # their canopy elements a second time would double the most expensive
-        # call in the day.
+        # Read off the profile that was just built, so it costs nothing beyond
+        # the max: asking the modules for their canopy elements a second time
+        # would double the most expensive call in the day.
         self.canopy_top_m = max((e.top_m for e in profile.elements), default=0.0)
 
         # 3./4. Water demand is pooled, then granted pro rata by the shared column.
@@ -227,8 +224,6 @@ class Tile:
 
     def diagnostics(self, light: LightResult | None = None) -> dict:
         out: dict = {
-            "x": self.x,
-            "y": self.y,
             "soil_c": self.soil.total_c,
             "soil_n": self.soil.total_n,
             "mineral_n": self.soil.mineral_n,
@@ -236,7 +231,6 @@ class Tile:
             "relative_water_content": self.soil.relative_water_content,
             "leached_n": self.soil.cumulative_leached_n,
             "canopy_top_m": self.canopy_top_m,
-            "sky_view_fraction": self.sky_fraction,
         }
         if light is not None:
             out["lai"] = light.total_lai
