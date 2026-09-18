@@ -1,7 +1,8 @@
 # Forest–Grassland Digital Twin
 
-A browser-based simulation of how a 2D tiled region evolves over time, driven by
-ports of two scientifically sound open-source ecological process models:
+A browser-based simulation of how one site evolves over time under a management
+regime, driven by ports of two scientifically sound open-source ecological
+process models:
 
 | Model | Represents | Upstream | Licence upstream |
 |---|---|---|---|
@@ -19,7 +20,7 @@ than reconciling two foreign formulations.
 
 ## The one rule the design exists to enforce
 
-**Every tile has exactly one vertical light profile and exactly one soil column.**
+**The tile has exactly one vertical light profile and exactly one soil column.**
 
 Running a forest model and a grassland model side by side and blending their
 outputs by cover fraction double-counts light and water: two independent carbon
@@ -28,7 +29,7 @@ receives. Everything in `packages/ecocore` exists to make that impossible, and
 `tests/test_coupling.py::test_absorbed_light_never_exceeds_incident_light` fails
 if it is ever violated.
 
-Three channels couple the models *within* a tile, all of them physical:
+Three channels couple the models, all of them physical:
 
 1. **Light** — trees and grass deposit leaf area into the same layer stack, so
    grass receives only radiation transmitted through the canopy above it.
@@ -36,34 +37,6 @@ Three channels couple the models *within* a tile, all of them physical:
    return litter to. Legume fixation raises nitrogen available to the trees.
 3. **Disturbance** — mowing and grazing are broadcast to *every* module, so a
    mower destroys tree saplings as well as cutting grass.
-
-Two more cross tile boundaries, which is what makes a region more than N
-independent columns:
-
-4. **Seed dispersal** — an exponential seed shadow, resolved once a year, so a
-   forested tile seeds the grassland next to it.
-5. **Lateral shading** — a sky view factor computed from the neighbours' canopy
-   heights, resolved once a day, so a tile beside a 30 m canopy does not receive
-   open-sky irradiance however empty its own profile is.
-
-Both default to off, so a multi-tile run reproduces the single-tile trajectory
-until one is switched on — see `packages/ecocore/README.md`. The scenario the UI
-opens on turns both on, because neither does anything visible in twenty-five
-identical columns.
-
-## What a tile is
-
-A tile carries the region's soil, the region's weather and the region's plant
-functional types. What it carries of its own is a **land use**: a management
-schedule and the vegetation standing on it at year zero. Those two are the only
-things that legitimately differ between two tiles of one region — a tile with
-its own soil column would be a second site, not a second land use.
-
-So a region is a short list of land-use types and an assignment of tiles to them.
-Twenty-five tiles are five types and a map, not twenty-five forms, and editing
-*meadow* edits every meadow at once. The map in the browser is where that
-assignment is drawn, and it is also the tile selector, so the region is a picture
-from the moment it is configured rather than from the moment a run finishes.
 
 ## What it reproduces
 
@@ -89,7 +62,7 @@ mortality threshold through the shared light profile.
 ## Repository layout
 
 ```
-packages/ecocore/     coupling substrate: light, soil, weather, tile, grid, dispersal
+packages/ecocore/     coupling substrate: light, soil, weather, tile, driving loop
 packages/formind/     forest process model port
 packages/grassmind/   grassland process model port
 packages/backend/     FastAPI service (job-and-poll)
@@ -102,9 +75,9 @@ Each package has its own `README.md` (what it models, units, provenance) and
 `CLAUDE.md` (invariants not to break).
 
 `ecocore` is a fifth package beyond the two models because the light profile and
-soil column are shared *state between* them. Putting them in either model would
-force a circular dependency or a duplicate — and a duplicate is exactly the
-double-counting failure above.
+soil column are shared *state between* them, within one tile. Putting them in
+either model would force a circular dependency or a duplicate — and a duplicate
+is exactly the double-counting failure above.
 
 ## Running it
 
@@ -117,16 +90,15 @@ cd frontend && npm install && npm run dev      # http://localhost:5173
 
 Vite proxies `/api` to port 8000, so no CORS setup is needed in development.
 
-Open <http://localhost:5173>. It starts on a 5×5 region with a wooded edge, three
-columns of abandoned field and a mown strip. Click a tile on the **Region** tab to
-change its land use or edit that land use's management; open **Tile** for its
-outputs; press **Run**. A finished run gets a shareable `?run=<id>` URL.
+Open <http://localhost:5173>. It starts on 90 years of abandoned management on
+bare ground. Edit the site, weather, management or initial vegetation in the
+sidebar; press **Run**. A finished run gets a shareable `?run=<id>` URL.
 
 ### Tests
 
 ```bash
-uv run pytest                    # everything (~5 min; 104 pass, 2 fail — see validation/)
-uv run pytest -m "not slow"      # fast subset (~2 min)
+uv run pytest                    # everything (~4 min; 78 pass, 2 fail — see validation/)
+uv run pytest -m "not slow"      # fast subset
 cd frontend && npm run typecheck
 ```
 
@@ -145,10 +117,6 @@ been checked, and each model package's README for known simplifications.
 
 ## Performance
 
-A single tile runs ~250 simulated years in ~30 s; a 90-year coupled run is
-~20 s. Light resolution is ~40% of that time. This is why the API is
-job-and-poll rather than synchronous: runs routinely outlast an HTTP timeout.
-
-Cost is linear in tiles — every tile is simulated in full — so the 5×5 scenario
-the UI opens on is about twenty-five times a single tile. Shrink the region or
-the number of years before iterating on anything else.
+The tile runs ~250 simulated years in ~30 s; a 90-year run is ~20 s. Light
+resolution is ~40% of that time. This is why the API is job-and-poll rather than
+synchronous: a long run routinely outlasts an HTTP timeout.

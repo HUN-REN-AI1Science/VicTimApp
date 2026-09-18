@@ -22,7 +22,7 @@ automated guard. Do not weaken it.
 - `ecocore` contains **no species biology** — no allometry, no photosynthesis, no
   PFTs. It owns the resources the models compete for and nothing else.
 - `backend` contains **no ecology**. It maps a scenario description onto an
-  `ecocore.Grid` and serves results.
+  `ecocore.Tile` and serves results.
 
 ## Units
 
