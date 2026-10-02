@@ -48,6 +48,7 @@ UNITS = {
     "dbh": "m",
     "height": "m",
     "leaf_area": "m2",
-    "gpp": "kgC m-2 d-1",
-    "npp": "kgC m-2 d-1",
+    # Diagnostics report the previous year's sum, not a daily rate.
+    "gpp": "kgC m-2 yr-1",
+    "npp": "kgC m-2 yr-1",
 }
