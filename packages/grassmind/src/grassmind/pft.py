@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, fields
 
-__all__ = ["GrassPFT", "DEFAULT_GRASS_PFTS", "grass_pft_schema"]
+__all__ = ["DEFAULT_GRASS_PFTS", "GrassPFT", "grass_pft_schema"]
 
 
 @dataclass

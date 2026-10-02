@@ -7,7 +7,6 @@ than as an error.
 """
 
 import pytest
-
 from formind import allometry
 from formind.pft import DEFAULT_TREE_PFTS
 

@@ -8,10 +8,10 @@ keeps all species biology out of ecocore, as required by the package boundary.
 
 from __future__ import annotations
 
+from collections.abc import Hashable
 from dataclasses import dataclass, field
-from typing import Hashable
 
-__all__ = ["Cohort", "CanopyElement"]
+__all__ = ["CanopyElement", "Cohort"]
 
 
 @dataclass

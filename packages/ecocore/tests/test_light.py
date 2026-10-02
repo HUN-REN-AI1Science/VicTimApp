@@ -8,7 +8,6 @@ absorbed total will exceed the incident radiation and this test fails.
 import math
 
 import pytest
-
 from ecocore.cohort import CanopyElement
 from ecocore.light import LightProfile, compute_light
 

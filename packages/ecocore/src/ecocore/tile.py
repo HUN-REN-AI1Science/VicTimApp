@@ -21,7 +21,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Iterable, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 import numpy as np
 
@@ -32,7 +32,7 @@ from .soil import SoilColumn, SoilParameters
 from .units import DAYS_PER_YEAR, DEFAULT_TILE_SIZE_M
 from .weather import DayWeather
 
-__all__ = ["Tile", "StepContext", "VegetationModule", "SeedRain"]
+__all__ = ["SeedRain", "StepContext", "Tile", "VegetationModule"]
 
 
 @dataclass

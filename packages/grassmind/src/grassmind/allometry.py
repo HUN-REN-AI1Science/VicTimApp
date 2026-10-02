@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import math
 
-__all__ = ["height", "leaf_area", "ground_area", "shoot_from_height"]
+__all__ = ["ground_area", "height", "leaf_area", "shoot_from_height"]
 
 
 def height(shoot_c: float, p) -> float:

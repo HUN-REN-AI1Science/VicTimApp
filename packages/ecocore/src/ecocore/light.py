@@ -22,8 +22,8 @@ automated guard against the double-counting failure mode.
 from __future__ import annotations
 
 import math
+from collections.abc import Hashable, Iterable, Sequence
 from dataclasses import dataclass, field
-from typing import Hashable, Iterable, Sequence
 
 import numpy as np
 

@@ -6,11 +6,9 @@ a regime produces the community it is supposed to produce.
 
 import numpy as np
 import pytest
-
 from ecocore import SoilColumn, SoilParameters, Tile, synthetic_weather
 from ecocore.units import DAYS_PER_YEAR
-from grassmind import GrasslandModule, ManagementSchedule
-from grassmind import allometry
+from grassmind import GrasslandModule, ManagementSchedule, allometry
 
 
 def run_grassland(years, schedule=None, seed=1):

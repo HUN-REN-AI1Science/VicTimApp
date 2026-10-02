@@ -119,7 +119,7 @@ class GrasslandModule:
         plants_per_m2: float = 300.0,
         management: ManagementSchedule | None = None,
         tile_area_m2: float = 400.0,
-    ) -> "GrasslandModule":
+    ) -> GrasslandModule:
         """An established sward, evenly split between the functional groups."""
         pfts = list(pfts or DEFAULT_GRASS_PFTS)
         module = cls(pfts=pfts, management=management or ManagementSchedule())
@@ -134,7 +134,7 @@ class GrasslandModule:
     @classmethod
     def bare_ground(
         cls, pfts: list[GrassPFT] | None = None, management: ManagementSchedule | None = None
-    ) -> "GrasslandModule":
+    ) -> GrasslandModule:
         return cls(pfts=list(pfts or DEFAULT_GRASS_PFTS), management=management or ManagementSchedule())
 
     def pft(self, pft_id: str) -> GrassPFT:

@@ -5,7 +5,6 @@ silently create or destroy carbon that the whole coupled model is accounted in.
 """
 
 import pytest
-
 from ecocore.soil import LitterInput, SoilColumn, SoilParameters
 
 

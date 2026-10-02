@@ -25,7 +25,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-__all__ = ["ManagementSchedule", "MowingEvent", "GrazingPeriod", "FertilisationEvent"]
+__all__ = ["FertilisationEvent", "GrazingPeriod", "ManagementSchedule", "MowingEvent"]
 
 
 @dataclass(frozen=True)
@@ -117,17 +117,17 @@ class ManagementSchedule:
     # ------------------------------------------------------------ presets ---
 
     @classmethod
-    def abandoned(cls) -> "ManagementSchedule":
+    def abandoned(cls) -> ManagementSchedule:
         """No management. The regime under which trees take the site."""
         return cls()
 
     @classmethod
-    def extensive_meadow(cls) -> "ManagementSchedule":
+    def extensive_meadow(cls) -> ManagementSchedule:
         """One late cut a year, no fertiliser -- species-rich hay meadow."""
         return cls(mowing=[MowingEvent(day_of_year=190)])
 
     @classmethod
-    def intensive_meadow(cls) -> "ManagementSchedule":
+    def intensive_meadow(cls) -> ManagementSchedule:
         """Four cuts and two fertiliser applications -- productive silage."""
         return cls(
             mowing=[MowingEvent(day_of_year=d) for d in (135, 175, 215, 255)],
@@ -138,6 +138,6 @@ class ManagementSchedule:
         )
 
     @classmethod
-    def pasture(cls) -> "ManagementSchedule":
+    def pasture(cls) -> ManagementSchedule:
         """Season-long grazing."""
         return cls(grazing=[GrazingPeriod(start_day=120, end_day=290)])

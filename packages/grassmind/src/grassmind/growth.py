@@ -31,7 +31,7 @@ from ecocore.units import SECONDS_PER_HOUR
 
 from . import allometry
 
-__all__ = ["CarbonBalance", "plant_photosynthesis", "daily_carbon_balance"]
+__all__ = ["CarbonBalance", "daily_carbon_balance", "plant_photosynthesis"]
 
 KG_C_PER_UMOL_CO2 = 12.011e-9
 
