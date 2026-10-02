@@ -56,19 +56,29 @@ export function LineChart({
   };
   const allValues = series.flatMap((s) => s.values).filter(Number.isFinite);
   const yMax = niceMax(Math.max(...allValues, 0));
+  // The baseline is zero unless a value goes below it; then the floor extends to
+  // fit, so a negative series is drawn rather than clipped off the plot.
+  const dataMin = Math.min(...allValues, 0);
+  const yMin = dataMin < 0 ? -niceMax(-dataMin) : 0;
   const xMax = Math.max(...x, 1);
 
   const px = (v: number) => PAD.left + (v / xMax) * inner.w;
-  const py = (v: number) => PAD.top + inner.h - (v / yMax) * inner.h;
+  const py = (v: number) => PAD.top + inner.h - ((v - yMin) / (yMax - yMin)) * inner.h;
 
-  const ticks = [0, 0.5, 1].map((f) => f * yMax);
+  const ticks = yMin < 0 ? [yMin, 0, yMax] : [0, 0.5, 1].map((f) => f * yMax);
 
   return (
     <div>
       <svg viewBox={`0 0 ${width} ${height}`} width="100%" role="img">
         {ticks.map((t) => (
           <g key={t}>
-            <line className="axis" x1={PAD.left} x2={width - PAD.right} y1={py(t)} y2={py(t)} />
+            <line
+              className={t === 0 && yMin < 0 ? "axis zero" : "axis"}
+              x1={PAD.left}
+              x2={width - PAD.right}
+              y1={py(t)}
+              y2={py(t)}
+            />
             <text x={PAD.left - 5} y={py(t) + 3} textAnchor="end">
               {format(t)}
             </text>
