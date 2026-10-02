@@ -50,10 +50,10 @@ def layer_range(crown_base_m: float, height_m: float) -> tuple[int, int]:
     return lo, hi
 
 
-def layered_space_limitation(
-    members: list[tuple[object, float, float, int, int]],
+def layered_space_limitation[Key](
+    members: list[tuple[Key, float, float, int, int]],
     tile_area_m2: float,
-) -> dict[object, float]:
+) -> dict[Key, float]:
     """Decide how many individuals must die because their layer is overfull.
 
     Args:
@@ -69,7 +69,7 @@ def layered_space_limitation(
         return {}
 
     counts = {key: n for key, n, _, _, _ in members}
-    removals: dict[object, float] = {}
+    removals: dict[Key, float] = {}
 
     max_layer = max(hi for _, _, _, _, hi in members)
     for layer in range(max_layer, -1, -1):

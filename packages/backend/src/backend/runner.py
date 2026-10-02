@@ -97,7 +97,10 @@ class JobStore:
             (job_id, config.name, total_days, _now(), config.model_dump_json()),
         )
         self._executor.submit(self._run, job_id, config)
-        return self.status(job_id)
+        status = self.status(job_id)
+        if status is None:
+            raise RuntimeError(f"job {job_id} vanished immediately after insert")
+        return status
 
     def _run(self, job_id: str, config: ScenarioConfig) -> None:
         try:
@@ -153,7 +156,11 @@ class JobStore:
         rows = self._read("SELECT * FROM jobs WHERE id=?", (job_id,))
         if not rows:
             return None
-        row = rows[0]
+        return self._to_status(rows[0])
+
+    @staticmethod
+    def _to_status(row: sqlite3.Row) -> JobStatus:
+        """Build a `JobStatus` from a full `jobs` row."""
         return JobStatus(
             id=row["id"],
             name=row["name"],
@@ -183,9 +190,9 @@ class JobStore:
 
     def list_jobs(self, limit: int = 50) -> list[JobStatus]:
         rows = self._read(
-            "SELECT id FROM jobs ORDER BY created_at DESC LIMIT ?", (limit,)
+            "SELECT * FROM jobs ORDER BY created_at DESC LIMIT ?", (limit,)
         )
-        return [self.status(row["id"]) for row in rows]
+        return [self._to_status(row) for row in rows]
 
     def shutdown(self) -> None:
         self._executor.shutdown(wait=False, cancel_futures=True)

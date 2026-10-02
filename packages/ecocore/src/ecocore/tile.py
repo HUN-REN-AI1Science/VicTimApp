@@ -94,18 +94,16 @@ class VegetationModule(Protocol):
     Deliberately narrow: a module cannot see the other module, only the shared
     light and soil. Cross-model effects (canopy shading, sward suppression of
     tree seedlings) therefore have to travel through real resources.
+
+    A module may also define `emit_disturbances(day) -> list[Defoliation]` to
+    trigger tile-level events before anyone steps. It is optional, so it is not
+    part of the protocol: `Tile.step_day` looks it up with `getattr`.
     """
 
     name: str
 
     def canopy_elements(self) -> list[CanopyElement]:
         """Leaf area this module puts into the shared vertical profile."""
-
-    def emit_disturbances(self, day: DayWeather) -> list[Defoliation]:
-        """Tile-level events this module triggers today, before anyone steps.
-
-        Optional: `Tile.step_day` skips modules that do not define it.
-        """
 
     def water_demand_mm(self, day: DayWeather, light: LightResult) -> float:
         """Transpiration this module would like today (mm)."""
