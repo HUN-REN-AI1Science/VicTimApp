@@ -36,7 +36,7 @@ Declared in `packages/ecocore/src/ecocore/units.py`. Two rules:
 ## Timestep contract
 
 Daily for water, carbon and light; annual for mortality, recruitment, cohort
-merging and seed dispersal. FORMIND upstream steps annually and GRASSMIND daily,
+merging and seed rain. FORMIND upstream steps annually and GRASSMIND daily,
 so this reconciliation is the most likely place for a silent rate bug. A rate
 given per year must be divided by `DAYS_PER_YEAR` at the point of use, not
 earlier.

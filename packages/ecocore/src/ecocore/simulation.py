@@ -1,9 +1,7 @@
 """The driving loop: steps one tile through a run and records its history.
 
 A tile self-seeds -- whatever it offered this year is what it receives next
-year, none of it lost and none of it borrowed from elsewhere. That is exactly
-`NoDispersal`'s old behaviour on a 1x1 grid, kept here as the only dispersal
-this package now has an opinion about.
+year, none of it lost and none of it borrowed from elsewhere.
 """
 
 from __future__ import annotations

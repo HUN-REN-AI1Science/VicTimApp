@@ -68,9 +68,8 @@ def test_results_expose_a_series():
 
 
 def test_a_tile_receives_next_year_what_it_offered_this_year():
-    """Self-seeding: nothing lost, nothing borrowed -- `NoDispersal`'s old behaviour."""
+    """Self-seeding: nothing lost, nothing borrowed."""
     tile = build_tile()
     run_simulation(tile, synthetic_weather(1, seed=1), years=2, record_every=365)
-    # The stub offers 10.0 "stub" seeds every year-end; with no dispersal kernel
-    # left in the model, a tile is the only source of its own incoming seeds.
+    # The stub offers 10.0 "stub" seeds every year-end; a tile is the only source of its own incoming seeds.
     assert tile.seed_rain.incoming["stub"] == pytest.approx(10.0)

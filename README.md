@@ -97,7 +97,7 @@ sidebar; press **Run**. A finished run gets a shareable `?run=<id>` URL.
 ### Tests
 
 ```bash
-uv run pytest                    # everything (~4 min; 78 pass, 2 fail — see validation/)
+uv run pytest                    # everything (~1.5 min; 78 pass, 2 fail — see validation/)
 uv run pytest -m "not slow"      # fast subset
 cd frontend && npm run typecheck
 ```
