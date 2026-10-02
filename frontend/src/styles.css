@@ -312,3 +312,7 @@ svg .axis.break { stroke: var(--muted); }
 /* Ground level. Solid and darker than the gridlines: it is the baseline the
    stand stands on, not one rule among several. */
 svg .axis.baseline { stroke: var(--ink); stroke-width: 1.25; }
+
+/* Zero on a line chart whose data go negative. Drawn like the baseline so a
+   series below it reads as a deficit, not as a gridline artefact. */
+svg .axis.zero { stroke: var(--ink); stroke-width: 1.25; }
