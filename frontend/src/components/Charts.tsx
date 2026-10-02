@@ -26,6 +26,21 @@ function niceMax(value: number): number {
   return step * magnitude;
 }
 
+/**
+ * Vertical domain of a line chart.
+ *
+ * The floor is zero unless the data go below it. Each side is rounded outwards
+ * on its own rather than made symmetric: a series peaking at 100 that dips to -2
+ * would have its dip squashed back to invisibility on a [-100, 100] axis.
+ */
+function yDomain(values: number[]): { min: number; max: number } {
+  const lowest = Math.min(...values, 0);
+  const highest = Math.max(...values, 0);
+  if (lowest >= 0) return { min: 0, max: niceMax(highest) };
+  // Data entirely below zero: zero is the ceiling, not an arbitrary 1.
+  return { min: -niceMax(-lowest), max: highest > 0 ? niceMax(highest) : 0 };
+}
+
 function format(value: number): string {
   if (value === 0) return "0";
   const abs = Math.abs(value);
@@ -55,20 +70,33 @@ export function LineChart({
     h: height - PAD.top - PAD.bottom,
   };
   const allValues = series.flatMap((s) => s.values).filter(Number.isFinite);
-  const yMax = niceMax(Math.max(...allValues, 0));
+  const y = yDomain(allValues);
   const xMax = Math.max(...x, 1);
 
   const px = (v: number) => PAD.left + (v / xMax) * inner.w;
-  const py = (v: number) => PAD.top + inner.h - (v / yMax) * inner.h;
+  const py = (v: number) => PAD.top + inner.h - ((v - y.min) / (y.max - y.min)) * inner.h;
 
-  const ticks = [0, 0.5, 1].map((f) => f * yMax);
+  // With a negative floor, zero is a tick in its own right so the sign of every
+  // value can be read against it.
+  const ticks =
+    y.min >= 0
+      ? [0, 0.5, 1].map((f) => f * y.max)
+      : y.max > 0
+        ? [y.min, 0, y.max]
+        : [y.min, y.min / 2, 0];
 
   return (
     <div>
       <svg viewBox={`0 0 ${width} ${height}`} width="100%" role="img">
         {ticks.map((t) => (
           <g key={t}>
-            <line className="axis" x1={PAD.left} x2={width - PAD.right} y1={py(t)} y2={py(t)} />
+            <line
+              className={t === 0 && y.min < 0 ? "axis zero" : "axis"}
+              x1={PAD.left}
+              x2={width - PAD.right}
+              y1={py(t)}
+              y2={py(t)}
+            />
             <text x={PAD.left - 5} y={py(t) + 3} textAnchor="end">
               {format(t)}
             </text>

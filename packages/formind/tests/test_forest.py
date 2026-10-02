@@ -11,6 +11,8 @@ import pytest
 from ecocore import SoilColumn, SoilParameters, Tile, synthetic_weather
 from ecocore.units import DAYS_PER_YEAR
 from formind import ForestModule
+from formind.growth import daily_carbon_balance
+from formind.pft import DEFAULT_TREE_PFTS
 
 
 def run_forest(years, seed=1, seeds_external=None, pfts=None):
@@ -92,3 +94,35 @@ def test_stand_profile_is_ordered_and_complete():
     for row in profile:
         assert row["crown_base"] < row["height"]
         assert row["crown_diameter"] > 0.0
+
+
+@pytest.mark.xfail(
+    strict=True,
+    raises=AssertionError,
+    reason="issue #1: respiration and turnover scale with stem mass (~D^2.6) but "
+    "photosynthesis with crown area (~D^1.2), so trees run a deficit below max_dbh",
+)
+@pytest.mark.parametrize("pft", DEFAULT_TREE_PFTS, ids=lambda p: p.id)
+def test_open_grown_tree_can_pay_for_itself_up_to_max_dbh(pft):
+    """A tree in full light with ample water and nitrogen must not run a carbon deficit.
+
+    `max_dbh` is where growth is meant to stop. If upkeep overtakes income well
+    before it, a closed stand spends most of its days in deficit and a long run
+    reports negative production for centuries.
+    """
+    weather = synthetic_weather(1, seed=1)
+    days = [weather.day(d) for d in range(DAYS_PER_YEAR)]
+    for dbh in np.linspace(0.05, pft.max_dbh, 12):
+        annual_npp = sum(
+            daily_carbon_balance(
+                dbh=dbh,
+                incident_par=day.par_umol_m2_s,
+                daylength_h=day.daylength_h,
+                temperature_c=day.temperature_c,
+                water_supply_fraction=1.0,
+                nitrogen_limitation=1.0,
+                p=pft,
+            ).npp
+            for day in days
+        )
+        assert annual_npp >= 0.0, f"{pft.id} runs a carbon deficit at dbh {dbh:.2f} m"
