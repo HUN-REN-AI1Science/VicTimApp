@@ -144,9 +144,9 @@ def tile_recorder(tile: Tile) -> dict:
     """
     record: dict = {}
     for module in tile.modules:
-        if hasattr(module, "stand_profile"):
+        if isinstance(module, ForestModule):
             record["stand_profile"] = module.stand_profile()
             record["dbh_histogram"] = module.dbh_histogram()
-        if hasattr(module, "sward_profile"):
+        if isinstance(module, GrasslandModule):
             record["sward_profile"] = module.sward_profile()
     return record

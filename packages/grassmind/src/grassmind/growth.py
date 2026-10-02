@@ -27,7 +27,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
-from ecocore.units import SECONDS_PER_HOUR
+from ecocore.units import DAYS_PER_YEAR, SECONDS_PER_HOUR
 
 from . import allometry
 
@@ -111,8 +111,8 @@ def daily_carbon_balance(
         * temperature_factor(temperature_c, 25.0, 18.0)
         * n_limit
     )
-    turnover_shoot = shoot_c * p.shoot_turnover_per_year / 365.0
-    turnover_root = root_c * p.root_turnover_per_year / 365.0
+    turnover_shoot = shoot_c * p.shoot_turnover_per_year / DAYS_PER_YEAR
+    turnover_root = root_c * p.root_turnover_per_year / DAYS_PER_YEAR
 
     net = gpp - maintenance
     npp = net * (1.0 - p.growth_respiration) if net > 0.0 else net

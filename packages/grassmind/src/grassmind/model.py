@@ -32,6 +32,7 @@ carbon `return_fraction` -- see `management.py`.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 
 from ecocore.cohort import CanopyElement, Cohort
@@ -527,8 +528,6 @@ class GrasslandModule:
         because herbaceous plant mass spans several orders of magnitude between a
         seedling and a mature tussock.
         """
-        import math
-
         if len(self.cohorts) < 2:
             return
         buckets: dict[tuple[str, int], GrassCohort] = {}
@@ -591,8 +590,6 @@ class GrasslandModule:
 
     def _shannon(self) -> float:
         """Shannon diversity over functional groups, by shoot biomass share."""
-        import math
-
         totals = [
             sum(c.shoot_c * c.n for c in self.cohorts if c.pft == p.id) for p in self.pfts
         ]
