@@ -14,16 +14,16 @@ from formind import DEFAULT_TREE_PFTS, ForestModule, TreePFT
 from grassmind import (
     DEFAULT_GRASS_PFTS,
     FertilisationEvent,
+    GrasslandModule,
     GrassPFT,
     GrazingPeriod,
-    GrasslandModule,
     ManagementSchedule,
     MowingEvent,
 )
 
 from .schemas import ManagementConfig, ScenarioConfig
 
-__all__ = ["build_tile", "build_weather", "build_management", "tile_recorder"]
+__all__ = ["build_management", "build_tile", "build_weather", "tile_recorder"]
 
 
 def build_weather(config: ScenarioConfig) -> WeatherSeries:

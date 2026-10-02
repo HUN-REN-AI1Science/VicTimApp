@@ -13,9 +13,9 @@ They are starting points for calibration, not a validated parameter set: see
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
-__all__ = ["TreePFT", "DEFAULT_TREE_PFTS", "tree_pft_schema"]
+__all__ = ["DEFAULT_TREE_PFTS", "TreePFT", "tree_pft_schema"]
 
 
 @dataclass

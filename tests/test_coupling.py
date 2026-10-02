@@ -8,7 +8,6 @@ outputs would fail every one of them.
 
 import numpy as np
 import pytest
-
 from ecocore import SoilColumn, SoilParameters, Tile, synthetic_weather
 from ecocore.units import DAYS_PER_YEAR
 from formind import ForestModule

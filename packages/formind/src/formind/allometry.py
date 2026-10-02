@@ -16,14 +16,14 @@ import math
 from ecocore.units import KG_C_PER_KG_ODM
 
 __all__ = [
-    "height",
-    "crown_diameter",
+    "aboveground_biomass_c",
     "crown_area",
     "crown_base",
-    "leaf_area",
-    "aboveground_biomass_c",
-    "diameter_increment",
+    "crown_diameter",
     "diameter_from_biomass",
+    "diameter_increment",
+    "height",
+    "leaf_area",
 ]
 
 

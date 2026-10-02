@@ -1,7 +1,6 @@
 """The driving loop: progress reporting, daily/annual stepping, self-seeding."""
 
 import pytest
-
 from ecocore import SoilColumn, SoilParameters, Tile, run_simulation, synthetic_weather
 from ecocore.cohort import CanopyElement
 

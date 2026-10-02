@@ -40,7 +40,7 @@ from dataclasses import dataclass, field
 
 from .units import DAYS_PER_YEAR
 
-__all__ = ["SoilParameters", "SoilColumn", "LitterInput"]
+__all__ = ["LitterInput", "SoilColumn", "SoilParameters"]
 
 # CENTURY 4.0 maximum decay rates (per year), at optimal temperature and moisture.
 MAX_DECAY_PER_YEAR = {

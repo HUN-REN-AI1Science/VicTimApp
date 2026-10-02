@@ -87,7 +87,7 @@ class WeatherSeries:
         self.start_day_of_year = start_day_of_year
 
     @classmethod
-    def from_arrays(cls, **kwargs) -> "WeatherSeries":
+    def from_arrays(cls, **kwargs) -> WeatherSeries:
         return cls(**kwargs)
 
     def __len__(self) -> int:

@@ -40,10 +40,10 @@ from ecocore.weather import DayWeather
 
 from . import allometry, mortality, recruitment
 from .growth import daily_carbon_balance
-from .recruitment import BREAST_HEIGHT_M, SeedlingCohort
 from .pft import DEFAULT_TREE_PFTS, TreePFT
+from .recruitment import BREAST_HEIGHT_M, SeedlingCohort
 
-__all__ = ["TreeCohort", "ForestModule"]
+__all__ = ["ForestModule", "TreeCohort"]
 
 PLANT_CN_RATIO = 120.0
 """C:N of NEW tree tissue, used to size nitrogen demand from carbon gain.
@@ -119,7 +119,7 @@ class ForestModule:
     # ------------------------------------------------------------- setup ----
 
     @classmethod
-    def bare_ground(cls, pfts: list[TreePFT] | None = None) -> "ForestModule":
+    def bare_ground(cls, pfts: list[TreePFT] | None = None) -> ForestModule:
         return cls(pfts=list(pfts or DEFAULT_TREE_PFTS), cohorts=[])
 
     def seed_stand(self, pft_id: str, n: int, dbh: float) -> None:

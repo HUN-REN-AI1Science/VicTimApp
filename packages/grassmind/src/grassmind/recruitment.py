@@ -8,7 +8,7 @@ forest-to-grassland channel in the code.
 
 from __future__ import annotations
 
-__all__ = ["establishment_number", "ESTABLISHMENT_EFFICIENCY"]
+__all__ = ["ESTABLISHMENT_EFFICIENCY", "establishment_number"]
 
 ESTABLISHMENT_EFFICIENCY = 0.15
 """Share of arriving seeds that become established plants under ideal light.
