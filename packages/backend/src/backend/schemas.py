@@ -1,9 +1,8 @@
 """Request and response shapes.
 
 These Pydantic models are the contract between the simulation packages and the
-browser. The frontend generates its TypeScript types from the OpenAPI schema
-FastAPI derives from them, so a field added here reaches the UI without a second
-definition drifting out of sync.
+browser. The frontend's TypeScript types (`frontend/src/types.ts`) are
+hand-written to mirror them, so a field added here must be added there too.
 """
 
 from __future__ import annotations

@@ -13,7 +13,8 @@ The shared substrate. Everything here is load-bearing for the coupling.
 
 ## Light module
 
-`compute_light` must keep `sum(absorbed) + floor == incident` exactly.
+`compute_light` must keep `sum(absorbed) + floor == incident` to machine precision
+(the tests use `rel=1e-9`).
 `tests/test_light.py` checks this across configurations; if you change the
 attenuation maths, that identity is the acceptance criterion.
 
@@ -38,7 +39,7 @@ term in `nitrogen_balance_error`, or the audit silently stops being an audit.
 ## Timestep contract
 
 Daily for water, carbon, light. Annual for mortality, recruitment, cohort merging
-and dispersal. FORMIND steps annually upstream and GRASSMIND daily, so this
+and seed rain. FORMIND steps annually upstream and GRASSMIND daily, so this
 reconciliation is where a silent rate bug is most likely. Annual rates are
 divided by `DAYS_PER_YEAR` at the point of use.
 
