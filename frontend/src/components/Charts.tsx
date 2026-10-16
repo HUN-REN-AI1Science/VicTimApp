@@ -55,20 +55,31 @@ export function LineChart({
     h: height - PAD.top - PAD.bottom,
   };
   const allValues = series.flatMap((s) => s.values).filter(Number.isFinite);
-  const yMax = niceMax(Math.max(...allValues, 0));
+  const dataMax = Math.max(...allValues, 0);
+  const dataMin = Math.min(...allValues, 0);
+  // The baseline stays at zero unless a value goes negative; then the domain
+  // extends below it so the series is drawn rather than clipped at the floor.
+  const yMin = dataMin < 0 ? -niceMax(-dataMin) : 0;
+  const yMax = dataMax > 0 ? niceMax(dataMax) : yMin < 0 ? 0 : 1;
   const xMax = Math.max(...x, 1);
 
   const px = (v: number) => PAD.left + (v / xMax) * inner.w;
-  const py = (v: number) => PAD.top + inner.h - (v / yMax) * inner.h;
+  const py = (v: number) => PAD.top + inner.h - ((v - yMin) / (yMax - yMin)) * inner.h;
 
-  const ticks = [0, 0.5, 1].map((f) => f * yMax);
+  const ticks = yMin < 0 ? [...new Set([yMin, 0, yMax])] : [0, 0.5, 1].map((f) => f * yMax);
 
   return (
     <div>
       <svg viewBox={`0 0 ${width} ${height}`} width="100%" role="img">
         {ticks.map((t) => (
           <g key={t}>
-            <line className="axis" x1={PAD.left} x2={width - PAD.right} y1={py(t)} y2={py(t)} />
+            <line
+              className={t === 0 && yMin < 0 ? "axis baseline" : "axis"}
+              x1={PAD.left}
+              x2={width - PAD.right}
+              y1={py(t)}
+              y2={py(t)}
+            />
             <text x={PAD.left - 5} y={py(t) + 3} textAnchor="end">
               {format(t)}
             </text>
