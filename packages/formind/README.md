@@ -108,6 +108,28 @@ replacement. Basal area (~12 m² ha⁻¹ at 90 years) sits at the low end of the
 observed range for mature temperate stands. `cd0` (crown diameter allometry) is
 the most sensitive parameter for stand density and floor light.
 
+### Long runs: forest NPP goes negative (issue #1)
+
+In a 500-year bare-ground run the reported stand `npp` falls below zero around
+year 150 and then stays near -0.14 kgC m⁻² y⁻¹ (GPP ~0.42) while biomass is flat.
+Investigated, not fixed:
+
+- **Not a timestep-contract bug.** It does not compound: the value is a steady
+  state reached once and held, and every per-year rate in `growth.py` is divided
+  by `DAYS_PER_YEAR` at the point of use.
+- **Not senescence.** It is not a transient carbon debt that a stand recovers
+  from.
+- **Cause: the formulation.** `npp` here is GPP − maintenance − turnover, i.e.
+  carbon left for stem growth *after replacing shed leaves and roots*, not the
+  usual GPP − Ra. Tissue costs (maintenance, turnover) scale with allometric
+  biomass, income scales with intercepted light, and nothing sheds biomass whose
+  balance is negative (no carbon-starvation mortality; negative `npp` is also not
+  debited from `dbh`). In the 250-year stand the deficit sits in the mid-sized
+  `late` cohorts (turnover ~0.32 vs GPP ~0.42 kgC m⁻² y⁻¹, maintenance ~0.2).
+  Negative values are therefore an artefact, not a result; do not read them
+  ecologically. Starvation mortality is the likely remedy and would change
+  long-run stand structure, so it needs its own decision.
+
 ## Tests
 
 ```bash
