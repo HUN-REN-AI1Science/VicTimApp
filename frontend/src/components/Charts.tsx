@@ -55,13 +55,24 @@ export function LineChart({
     h: height - PAD.top - PAD.bottom,
   };
   const allValues = series.flatMap((s) => s.values).filter(Number.isFinite);
-  const yMax = niceMax(Math.max(...allValues, 0));
+  const lo = Math.min(...allValues, 0);
+  const hi = Math.max(...allValues, 0);
+  // Each side of zero is rounded on its own, so a mostly-positive series keeps
+  // its resolution while a negative tail stays visible instead of being clipped
+  // at a zero floor.
+  const negative = lo < 0;
+  const yMin = negative ? -niceMax(-lo) : 0;
+  const yMax = negative && hi <= 0 ? 0 : niceMax(hi);
   const xMax = Math.max(...x, 1);
 
   const px = (v: number) => PAD.left + (v / xMax) * inner.w;
-  const py = (v: number) => PAD.top + inner.h - (v / yMax) * inner.h;
+  const py = (v: number) => PAD.top + inner.h - ((v - yMin) / (yMax - yMin)) * inner.h;
 
-  const ticks = [0, 0.5, 1].map((f) => f * yMax);
+  const ticks = !negative
+    ? [0, 0.5, 1].map((f) => f * yMax)
+    : yMax === 0
+      ? [yMin, yMin / 2, 0]
+      : [yMin, 0, yMax];
 
   return (
     <div>
@@ -74,6 +85,10 @@ export function LineChart({
             </text>
           </g>
         ))}
+        {/* The zero rule is what the sign is read against once data go negative. */}
+        {negative && (
+          <line className="axis baseline" x1={PAD.left} x2={width - PAD.right} y1={py(0)} y2={py(0)} />
+        )}
         {[0, 0.5, 1].map((f) => (
           <text key={f} x={px(f * xMax)} y={height - 6} textAnchor="middle">
             {Math.round(f * xMax)}
